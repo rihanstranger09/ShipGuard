@@ -1,0 +1,18 @@
+{
+  "releaseId": "string"
+} -> {
+  "issues": [
+    { "id": "string", "key": "string", "summary": "string", "priority": "string", "status": "string", "url": "string", "hasRollback": "boolean" }
+  ],
+  "prs": [
+    { "id": "string", "url": "string", "state": "string", "checksFailed": "boolean", "reviewsApproved": "boolean" }
+  ],
+  "pages": [
+    { "id": "string", "key": "string", "title": "string", "status": "string", "url": "string" }
+  ],
+  "incidents": [
+    { "id": "string", "key": "string", "status": "string", "url": "string" }
+  ],
+  "demoMode": "boolean",
+  "partialContext": "boolean"
+}

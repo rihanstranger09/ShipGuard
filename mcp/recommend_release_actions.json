@@ -1,0 +1,12 @@
+{
+  "releaseId": "string"
+} -> {
+  "actions": [
+    {
+      "title": "string",
+      "description": "string",
+      "url": "string",
+      "priority": "string"
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShipGuard Release Readiness</title>
+    <script src="https://connect-cdn.atl-paas.net/all.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f4f5f7; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .badge { padding: 4px 8px; border-radius: 4px; color: white; font-size: 12px; font-weight: bold; }
+        .ready { background: #28a745; }
+        .at-risk { background: #ffc107; color: #333; }
+        .blocked { background: #dc3545; }
+        .demo-badge { background: #6f42c1; margin-bottom: 15px; display: inline-block; }
+        .score-gauge { font-size: 48px; font-weight: bold; margin: 10px 0; }
+        .evidence-list { list-style: none; padding: 0; }
+        .evidence-item { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .evidence-item a { color: #0052cc; text-decoration: none; }
+        .evidence-item a:hover { text-decoration: underline; }
+        .recommendation { color: #555; font-size: 14px; margin-top: 5px; }
+        .rovo-btn { background: #0052cc; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin-top: 20px; }
+        .rovo-btn:hover { background: #0045a8; }
+        .status-band { margin-bottom: 20px; }
+        .breakdown-item { margin-bottom: 10px; padding-left: 20px; border-left: 3px solid #ccc; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ShipGuard Release Readiness</h1>
+        <div id="demo-badge" class="badge demo-badge" style="display: none;">DEMO DATA MODE</div>
+        
+        <div class="status-band">
+            <h2>Release Version: <span id="release-name">Loading...</span></h2>
+            <div class="score-gauge" id="score">--</div>
+            <div id="status-badge" class="badge">--</div>
+        </div>
+
+        <div id="breakdown">
+            <h3>Risk Breakdown</h3>
+            <div id="breakdown-list"></div>
+        </div>
+
+        <div id="evidence">
+            <h3>Evidence & Citations</h3>
+            <ul class="evidence-list" id="evidence-list"></ul>
+        </div>
+
+        <button class="rovo-btn" onclick="askRovo()">Ask ShipGuard (Rovo Agent)</button>
+    </div>
+
+    <script>
+        AP.initialize(() => {
+            const context = AP.context.getContext();
+            // In production, fetch releaseId from context or storage
+            const releaseId = 'v2.4.0'; // Default for demo
+            const releaseName = 'v2.4.0';
+            
+            document.getElementById('release-name').innerText = releaseName;
+
+            // Fetch readiness from backend resolver
+            AP.request({
+                url: '/rest/api/3/issue/picker?query=' + releaseId, // Placeholder for actual resolver call
+                type: 'GET',
+                success: function(data) {
+                    // Mocking the resolver response for MVP frontend structure
+                    const readiness = {
+                        score: 65,
+                        status: 'At Risk',
+                        demoMode: true,
+                        deterministicBreakdown: [
+                            { ruleId: 'RULE_BLOCKER', title: 'Open blocker issue', penalty: 35, evidence: [{id: 'PROJ-101', url: 'https://jira.example.com/browse/PROJ-101'}], recommendation: 'Resolve blocker PROJ-101 before release.' },
+                            { ruleId: 'RULE_HIGH_SEV', title: 'Critical/high-severity unresolved issue', penalty: 0, evidence: [], recommendation: '' },
+                            { ruleId: 'RULE_OPEN_PR', title: 'Open PR linked to release issue', penalty: 0, evidence: [], recommendation: '' },
+                            { ruleId: 'RULE_PR_FAIL', title: 'PR with failing checks/missing review', penalty: 0, evidence: [], recommendation: '' },
+                            { ruleId: 'RULE_DECISION', title: 'Unapproved decision (Confluence)', penalty: 0, evidence: [], recommendation: '' },
+                            { ruleId: 'RULE_ROLLBACK', title: 'Missing rollback/runbook (High risk)', penalty: 30, evidence: [{id: 'PROJ-101', url: 'https://jira.example.com/browse/PROJ-101'}], recommendation: 'Create rollback plan for PROJ-101.' },
+                            { ruleId: 'RULE_INCIDENT', title: 'Recent unresolved incident (affected)', penalty: 0, evidence: [], recommendation: '' }
+                        ],
+                        aiExplanation: "The release is At Risk (65/100) due to Blocker PROJ-101 [PROJ-101](https://jira.example.com/browse/PROJ-101) and missing rollback plan. Confidence: High.",
+                        citations: [{id: 'PROJ-101', url: 'https://jira.example.com/browse/PROJ-101'}]
+                    };
+
+                    render(readiness);
+                },
+                error: function(err) {
+                    console.error("Error fetching readiness", err);
+                    document.getElementById('score').innerText = "Error";
+                }
+            });
+        });
+
+        function render(data) {
+            if (data.demoMode) {
+                document.getElementById('demo-badge').style.display = 'inline-block';
+            }
+
+            document.getElementById('score').innerText = data.score;
+            const statusBadge = document.getElementById('status-badge');
+            statusBadge.innerText = data.status;
+            statusBadge.className = 'badge ' + (data.status === 'Ready' ? 'ready' : (data.status === 'At Risk' ? 'at-risk' : 'blocked'));
+
+            const breakdownList = document.getElementById('breakdown-list');
+            data.deterministicBreakdown.forEach(b => {
+                if (b.penalty > 0) {
+                    const div = document.createElement('div');
+                    div.className = 'breakdown-item';
+                    div.innerHTML = `<strong>${b.title}</strong> (-${b.penalty} pts)<br>${b.recommendation}<br><small><a href="${b.evidence[0].url}" target="_blank">${b.evidence[0].id}</a></small>`;
+                    breakdownList.appendChild(div);
+                }
+            });
+
+            const evidenceList = document.getElementById('evidence-list');
+            data.citations.forEach(c => {
+                const li = document.createElement('li');
+                li.className = 'evidence-item';
+                li.innerHTML = `<a href="${c.url}" target="_blank">${c.id}</a>`;
+                evidenceList.appendChild(li);
+            });
+
+            document.getElementById('ai-explanation').innerText = data.aiExplanation;
+        }
+
+        function askRovo() {
+            // Trigger Rovo agent conversation
+            // In Forge, this would open the Rovo chat with context
+            alert("Opening Rovo Agent: ShipGuard... (Context: Release v2.4.0)");
+            // AP.rovo.openChat({ context: { releaseId: 'v2.4.0' } }); // Future API
+        }
+    </script>
+</body>
+</html>

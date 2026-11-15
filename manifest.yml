@@ -1,0 +1,113 @@
+app:
+  id: ari:cloud:ecosystem::app/shipguard-release-readiness
+  name: ShipGuard
+  version: 1.0.0
+  vendor:
+    name: ShipGuard Team
+    url: https://codegeist2026.devpost.com
+  description: AI-powered Release Readiness & Delivery Risk Agent for Jira, Bitbucket, and Confluence.
+  runtime:
+    cloud: true
+  modules:
+    jira:projectSettingsPage:
+      - key: shipguard-release-readiness
+        function: main
+        title: ShipGuard Release Readiness
+        icon: https://developer.atlassian.com/platform/forge/images/jira-icon.svg
+        conditions:
+          - condition: jira:project_administrator
+    jira:issuePanel:
+      - key: shipguard-issue-panel
+        function: issuePanel
+        title: ShipGuard Release Risk
+        icon: https://developer.atlassian.com/platform/forge/images/jira-icon.svg
+        conditions:
+          - condition: jira:issue_viewer
+    function:
+      - key: main
+        handler: index.runProjectSettings
+      - key: issuePanel
+        handler: index.runIssuePanel
+      - key: getReadiness
+        handler: index.getReadiness
+      - key: getEvidence
+        handler: index.getEvidence
+      - key: recommendActions
+        handler: index.recommendActions
+      - key: draftBrief
+        handler: index.draftBrief
+      - key: seedDemoData
+        handler: index.seedDemoData
+      - key: clearDemoData
+        handler: index.clearDemoData
+    storage:
+      entityTypes:
+        - ReleaseRiskCache
+        - DemoModeFlag
+    llm:
+      - key: shipguard-llm
+        # Model selection handled at runtime via @forge/llm list
+        # Placeholder for manifest schema; actual model ID selected dynamically
+        description: AI model for release readiness explanations and briefs.
+    rovo:agent:
+      - key: shipguard-agent
+        name: ShipGuard
+        persona: Senior Release Engineer & Risk Analyst. Evidence-driven, concise, and proactive.
+        skills:
+          - name: get_release_readiness
+            description: Returns deterministic score, status, breakdown, confidence, and citations.
+            schema:
+              type: object
+              properties:
+                releaseId: { type: string, description: "Jira Release Version ID" }
+                includeEvidence: { type: boolean, default: true }
+          - name: get_release_evidence
+            description: Returns issues, PRs, decisions, deployments, and incident evidence.
+            schema:
+              type: object
+              properties:
+                releaseId: { type: string, description: "Jira Release Version ID" }
+          - name: recommend_release_actions
+            description: Returns prioritized, owner-aware actions.
+            schema:
+              type: object
+              properties:
+                releaseId: { type: string, description: "Jira Release Version ID" }
+          - name: draft_release_brief
+            description: Generates a stakeholder-ready go/no-go summary from retrieved evidence only.
+            schema:
+              type: object
+              properties:
+                releaseId: { type: string, description: "Jira Release Version ID" }
+                audience: { type: string, description: "Target audience", enum: [Stakeholders, Developers, Management] }
+        actions:
+          - tool: get_release_readiness
+          - tool: get_release_evidence
+          - tool: recommend_release_actions
+          - tool: draft_release_brief
+        prompts:
+          system: |
+            You are ShipGuard, an Atlassian Forge agent. Analyze release readiness for [ReleaseVersion].
+            Cite every claim with [SourceID](URL). Never hallucinate data.
+            If data is missing, state 'Partial Data: [Reason]'.
+            Confidence: [High/Medium/Low].
+            Use the provided MCP tools to fetch data and generate explanations.
+            Clamp the readiness score to 0–100.
+            Status bands: Ready (80–100), At Risk (50–79), Blocked (0–49).
+            Label "Demo data" if the release is in seeded demo mode.
+    permissions:
+      scopes:
+        - read:jira:issue
+        - read:jira:version
+        - read:confluence:page
+        - read:bitbucket:repository
+        - read:graph:version:jira
+        - read:graph:issue:jira
+        - read:graph:page:confluence
+        - write:storage
+        - read:storage
+  resources:
+    - key: frontend
+      path: frontend/
+    - key: backend
+      path: backend/
