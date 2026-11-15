@@ -1,0 +1,9 @@
+{
+  "releaseId": "string",
+  "audience": "string"
+} -> {
+  "brief": "string",
+  "citations": [
+    { "id": "string", "url": "string" }
+  ]
+}

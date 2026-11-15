@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShipGuard Issue Panel</title>
+    <script src="https://connect-cdn.atl-paas.net/all.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 10px; background: white; }
+        .panel { border: 1px solid #ddd; border-radius: 4px; padding: 10px; }
+        .score { font-size: 24px; font-weight: bold; }
+        .status { padding: 2px 6px; border-radius: 3px; color: white; font-size: 12px; }
+        .ready { background: #28a745; }
+        .at-risk { background: #ffc107; color: #333; }
+        .blocked { background: #dc3545; }
+        .why { margin-top: 10px; font-size: 12px; color: #666; cursor: pointer; text-decoration: underline; }
+        .expansion { display: none; margin-top: 10px; padding: 10px; background: #f9f9f9; border-radius: 4px; font-size: 12px; }
+        .expansion.open { display: block; }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong>ShipGuard Release Risk</strong>
+            <span id="status-badge" class="status">Loading...</span>
+        </div>
+        <div class="score" id="score">--</div>
+        <div class="why" onclick="toggleExpansion()">Why? <span id="arrow">▼</span></div>
+        <div class="expansion" id="expansion">
+            <div id="expansion-content">Loading breakdown...</div>
+        </div>
+    </div>
+
+    <script>
+        AP.initialize(() => {
+            // In production, fetch issue context and linked release
+            const releaseId = 'v2.4.0';
+            const score = 65;
+            const status = 'At Risk';
+
+            document.getElementById('score').innerText = score + '/100';
+            const statusBadge = document.getElementById('status-badge');
+            statusBadge.innerText = status;
+            statusBadge.className = 'status ' + (status === 'Ready' ? 'ready' : (status === 'At Risk' ? 'at-risk' : 'blocked'));
+
+            document.getElementById('expansion-content').innerHTML = `
+                <strong>Deterministic Breakdown:</strong><br>
+                - Open blocker issue (-35 pts): [PROJ-101](https://jira.example.com/browse/PROJ-101)<br>
+                - Missing rollback/runbook (-30 pts): [PROJ-101](https://jira.example.com/browse/PROJ-101)<br>
+                <br>
+                <strong>AI Insight:</strong> The release is At Risk due to Blocker PROJ-101. Recommendation: Resolve before shipping.
+            `;
+        });
+
+        function toggleExpansion() {
+            const exp = document.getElementById('expansion');
+            const arrow = document.getElementById('arrow');
+            exp.classList.toggle('open');
+            arrow.innerText = exp.classList.contains('open') ? '▲' : '▼';
+        }
+    </script>
+</body>
+</html>

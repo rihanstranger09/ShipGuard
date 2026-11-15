@@ -1,0 +1,24 @@
+{
+  "releaseId": "string",
+  "includeEvidence": "boolean"
+} -> {
+  "score": "number",
+  "status": "string",
+  "deterministicBreakdown": [
+    {
+      "ruleId": "string",
+      "title": "string",
+      "penalty": "number",
+      "evidence": [
+        { "id": "string", "url": "string" }
+      ],
+      "recommendation": "string"
+    }
+  ],
+  "aiExplanation": "string",
+  "confidence": "string",
+  "citations": [
+    { "id": "string", "url": "string" }
+  ],
+  "demoMode": "boolean"
+}
